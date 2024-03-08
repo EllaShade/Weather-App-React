@@ -15,15 +15,14 @@ const Weather = () => {
   const [weather, setWeather] = useState({});
   const [displayedCity, setDisplayedCity] = useState(null);
   const [forecast, setForecast] = useState([]);
-
-  const getForecast = (city) => {
+  const getForecast = useCallback((city) => {
     const apiKey = "05cd0a2o385623d1bd0t06fa44dfb1d2";
     const apiUrl = `https://api.shecodes.io/weather/v1/forecast?query=${city}&key=${apiKey}&units=metric`;
 
     axios(apiUrl).then((response) => {
       displayForecast(response);
     });
-  };
+  }, []);
 
   const loadWeatherData = useCallback(
     async (city) => {
