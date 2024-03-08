@@ -1,55 +1,61 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import ReactAnimatedWeather from "react-animated-weather";
-
 import "./Weather.css";
 
-export default function Weather() {
+const defaults = {
+  color: "goldenrod",
+  size: 64,
+  animate: true,
+};
+
+const Weather = () => {
   const [city, setCity] = useState("Zurich");
   const [loaded, setLoaded] = useState(false);
   const [weather, setWeather] = useState({});
   const [displayedCity, setDisplayedCity] = useState(null);
   const [forecast, setForecast] = useState([]);
-  const defaults = {
-    color: "goldenrod",
-    size: 64,
-    animate: true,
+
+  const getForecast = (city) => {
+    const apiKey = "05cd0a2o385623d1bd0t06fa44dfb1d2";
+    const apiUrl = `https://api.shecodes.io/weather/v1/forecast?query=${city}&key=${apiKey}&units=metric`;
+
+    axios(apiUrl).then((response) => {
+      displayForecast(response);
+    });
   };
 
-  const loadInitialWeather = useCallback(async (city) => {
-    try {
-      let apiKey = "05cd0a2o385623d1bd0t06fa44dfb1d2";
-      let apiUrl = `https://api.shecodes.io/weather/v1/current?query=${city}&key=${apiKey}&units=metric`;
-      const response = await axios.get(apiUrl);
-      displayWeather(response);
-      getForecast(response.data.city);
-    } catch (error) {
-      console.error("Initial weather load failed:", error);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadInitialWeather(city);
-  }, []);
-
-  function handleSubmit(event) {
-    event.preventDefault();
-    let apiKey = "05cd0a2o385623d1bd0t06fa44dfb1d2";
-    let apiUrl = `https://api.shecodes.io/weather/v1/current?query=${city}&key=${apiKey}&units=metric`;
-    axios
-      .get(apiUrl)
-      .then((response) => {
-        console.log("API Response:", response.data);
+  const loadWeatherData = useCallback(
+    async (city) => {
+      try {
+        console.log("Fetching weather data for", city);
+        let apiKey = "05cd0a2o385623d1bd0t06fa44dfb1d2";
+        let apiUrl = `https://api.shecodes.io/weather/v1/current?query=${city}&key=${apiKey}&units=metric`;
+        const response = await axios.get(apiUrl);
+        console.log("Weather data response:", response.data);
         displayWeather(response);
         getForecast(response.data.city);
-      })
-      .catch((error) => {
-        console.error("API request failed:", error);
-        loadInitialWeather(city);
-      });
-  }
+      } catch (error) {
+        console.error("Weather data loading failed:", error);
+      } finally {
+        setLoaded(true);
+      }
+    },
+    [getForecast]
+  );
 
-  function displayWeather(response) {
+  useEffect(() => {
+    if (!loaded) {
+      loadWeatherData(city);
+    }
+  }, [loadWeatherData, loaded, city]);
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    setLoaded(false);
+  };
+
+  const displayWeather = (response) => {
     console.log("API Response:", response.data);
 
     if (
@@ -73,45 +79,52 @@ export default function Weather() {
     } else {
       console.error("Invalid API response format", response.data);
     }
-  }
+  };
 
-  function formatTime(timestamp) {
+  const formatTime = (timestamp) => {
     const date = new Date(timestamp * 1000);
     const hours = date.getHours();
     const minutes = date.getMinutes();
-
     return `${hours}:${minutes < 10 ? "0" : ""}${minutes}`;
-  }
+  };
 
-  function formatDay(timestamp) {
-    let date = new Date(timestamp * 1000);
-    let days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
+  const formatDay = (timestamp) => {
+    const date = new Date(timestamp * 1000);
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     return days[date.getDay()];
-  }
+  };
 
-  function updateCity(event) {
+  const updateCity = (event) => {
     setCity(event.target.value);
-  }
+  };
 
-  function displayForecast(response) {
+  const displayForecast = (response) => {
     console.log(response.data);
 
     if (response.data.daily) {
-      let forecastData = response.data.daily.slice(0, 5);
+      const forecastData = response.data.daily.slice(0, 5);
       setForecast(forecastData);
     } else {
       console.error("Invalid forecast data format", response.data);
     }
-  }
+  };
 
-  function getForecast(city) {
-    let apiKey = "05cd0a2o385623d1bd0t06fa44dfb1d2";
-    let apiUrl = `https://api.shecodes.io/weather/v1/forecast?query=${city}&key=${apiKey}&units=metric`;
-    axios(apiUrl).then((response) => {
-      displayForecast(response);
-    });
-  }
+  const isValidIcon = (icon) => {
+    const validIcons = [
+      "CLEAR_DAY",
+      "CLEAR_NIGHT",
+      "PARTLY_CLOUDY_DAY",
+      "PARTLY_CLOUDY_NIGHT",
+      "CLOUDY",
+      "RAIN",
+      "SLEET",
+      "SNOW",
+      "WIND",
+      "FOG",
+    ];
+
+    return validIcons.includes(icon);
+  };
 
   return (
     <div className="weather-app">
@@ -149,7 +162,7 @@ export default function Weather() {
           </div>
           <div className="weather-app-temperature-container">
             <div className="weather-icon" id="icon">
-              {weather.icon && (
+              {weather.icon && isValidIcon(weather.icon) && (
                 <ReactAnimatedWeather
                   icon={weather.icon.toUpperCase()}
                   color={defaults.color}
@@ -219,4 +232,6 @@ export default function Weather() {
       </footer>
     </div>
   );
-}
+};
+
+export default Weather;
