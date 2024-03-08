@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import ReactAnimatedWeather from "react-animated-weather";
 
@@ -16,7 +16,7 @@ export default function Weather() {
     animate: true,
   };
 
-  const loadInitialWeather = async (city) => {
+  const loadInitialWeather = useCallback(async (city) => {
     try {
       let apiKey = "05cd0a2o385623d1bd0t06fa44dfb1d2";
       let apiUrl = `https://api.shecodes.io/weather/v1/current?query=${city}&key=${apiKey}&units=metric`;
@@ -26,7 +26,7 @@ export default function Weather() {
     } catch (error) {
       console.error("Initial weather load failed:", error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadInitialWeather(city);
